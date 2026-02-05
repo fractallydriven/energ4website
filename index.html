@@ -287,10 +287,13 @@
       <div class="note">Mass flow retained. Coal/GO removed from this table and moved to Step 3.</div>
       <table>
         <thead>
-          <tr><th>Element</th><th>Symbol</th><th>Form</th><th class="text-center">Grade (ppm)</th><th class="text-center">Recovery (%)</th><th class="text-center">Factor</th><th>Price Unit</th><th class="text-center">Price</th><th class="text-center">Metal (t/yr)</th><th class="text-center">Product (t/yr)</th><th class="text-center">Annual Revenue (USD)</th></tr>
+          <tr><th>Element</th><th>Symbol</th><th>Form</th><th class="text-center">Grade (ppm)</th><th class="text-center">Recovery (%)</th><th class="text-center">Factor</th><th>Price Unit</th><th class="text-center">Price</th><th class="text-center">Metal (t/yr)</th><th class="text-center">Product (t/yr)</th><th class="text-center">Mass (kg/yr)</th><th class="text-center">Mass (oz/yr)</th><th class="text-center">Annual Revenue (USD)</th></tr>
         </thead>
         <tbody id="massFlowBody"></tbody>
-        <tfoot><tr class="section-header"><td colspan="10">Total Metals Revenue</td><td class="text-center" id="mfTotalRevenue">0</td></tr></tfoot>
+        <tfoot>
+          <tr class="section-header"><td colspan="12">Total Metals Revenue</td><td class="text-center" id="mfTotalRevenue">0</td></tr>
+          <tr><td colspan="12" class="text-right small">Total annual product mass (all products)</td><td class="text-center" id="mfTotalMassKg">0 kg/yr</td></tr>
+        </tfoot>
       </table>
     </section>
 
@@ -324,9 +327,9 @@
     <section id="step4" class="step">
       <h2>Step 4 – Valuation &amp; Reserves</h2>
       <table>
-        <thead><tr><th>Element</th><th>Form</th><th class="text-center">Annual Product (t/yr)</th><th class="text-center">Annual Revenue (USD)</th><th class="text-center">Reserve Product (t)</th><th class="text-center">Reserve Value (USD)</th></tr></thead>
+        <thead><tr><th>Element</th><th>Form</th><th class="text-center">Annual Product (t/yr)</th><th class="text-center">Annual Revenue (USD)</th><th class="text-center">Reserve Product (t)</th><th class="text-center">Reserves (oz)</th><th class="text-center">Reserve Value (USD)</th></tr></thead>
         <tbody id="valuationBody"></tbody>
-        <tfoot><tr class="section-header"><td colspan="3">Totals</td><td class="text-center" id="valTotalAnnualRev">0</td><td class="text-center" id="valTotalResT">0</td><td class="text-center" id="valTotalResValue">0</td></tr></tfoot>
+        <tfoot><tr class="section-header"><td colspan="3">Totals</td><td class="text-center" id="valTotalAnnualRev">0</td><td class="text-center" id="valTotalResT">0</td><td class="text-center" id="valTotalResOz">0</td><td class="text-center" id="valTotalResValue">0</td></tr></tfoot>
       </table>
     </section>
 
@@ -449,17 +452,133 @@ function fmt(num, dec = 0) { if (!isFinite(num)) return "0"; return num.toLocale
 function fmtCurr(num, dec = 0) { if (!isFinite(num)) return "$0"; return num.toLocaleString("en-US", { style:"currency", currency:"USD", minimumFractionDigits: dec, maximumFractionDigits: dec }); }
 
 const elementDB = {
-  Au:{name:"Gold",defaultFormId:"Au_metal",forms:[{id:"Au_metal",label:"Gold Metal",factor:1,priceUnit:"oz",price:2300}]},
-  Ag:{name:"Silver",defaultFormId:"Ag_metal",forms:[{id:"Ag_metal",label:"Silver Metal",factor:1,priceUnit:"oz",price:28}]},
-  Nd:{name:"Neodymium",defaultFormId:"Nd2O3",forms:[{id:"Nd2O3",label:"Neodymium Oxide",factor:1.17,priceUnit:"mt",price:60000}]},
-  Dy:{name:"Dysprosium",defaultFormId:"Dy2O3",forms:[{id:"Dy2O3",label:"Dysprosium Oxide",factor:1.17,priceUnit:"mt",price:390000}]},
-  Sc:{name:"Scandium",defaultFormId:"Sc2O3",forms:[{id:"Sc2O3",label:"Scandium Oxide",factor:1.5,priceUnit:"kg",price:3300}]},
-  Y:{name:"Yttrium",defaultFormId:"Y2O3",forms:[{id:"Y2O3",label:"Yttrium Oxide",factor:1.27,priceUnit:"mt",price:20000}]},
-  Li:{name:"Lithium",defaultFormId:"Li2CO3",forms:[{id:"Li2CO3",label:"Lithium Carbonate",factor:5.32,priceUnit:"mt",price:15000}]},
-  Cu:{name:"Copper",defaultFormId:"Cu_cath",forms:[{id:"Cu_cath",label:"Copper Cathode",factor:1,priceUnit:"mt",price:9000}]}
+  // Precious metals
+  Au: {name:"Gold", defaultFormId:"Au_metal", forms:[
+    {id:"Au_metal", label:"Gold Metal (Au)", factor:1.0, priceUnit:"oz", price:2300}
+  ]},
+  Ag: {name:"Silver", defaultFormId:"Ag_metal", forms:[
+    {id:"Ag_metal", label:"Silver Metal (Ag)", factor:1.0, priceUnit:"oz", price:28}
+  ]},
+  Pt: {name:"Platinum", defaultFormId:"Pt_metal", forms:[
+    {id:"Pt_metal", label:"Platinum Metal (Pt)", factor:1.0, priceUnit:"oz", price:1000}
+  ]},
+  Pd: {name:"Palladium", defaultFormId:"Pd_metal", forms:[
+    {id:"Pd_metal", label:"Palladium Metal (Pd)", factor:1.0, priceUnit:"oz", price:900}
+  ]},
+  Rh: {name:"Rhodium", defaultFormId:"Rh_metal", forms:[
+    {id:"Rh_metal", label:"Rhodium Metal (Rh)", factor:1.0, priceUnit:"oz", price:4500}
+  ]},
+  Ru: {name:"Ruthenium", defaultFormId:"Ru_metal", forms:[
+    {id:"Ru_metal", label:"Ruthenium Metal (Ru)", factor:1.0, priceUnit:"oz", price:500}
+  ]},
+  Ir: {name:"Iridium", defaultFormId:"Ir_metal", forms:[
+    {id:"Ir_metal", label:"Iridium Metal (Ir)", factor:1.0, priceUnit:"oz", price:4500}
+  ]},
+  Os: {name:"Osmium", defaultFormId:"Os_metal", forms:[
+    {id:"Os_metal", label:"Osmium Metal (Os)", factor:1.0, priceUnit:"oz", price:400}
+  ]},
+
+  // LREE
+  La:{name:"Lanthanum",defaultFormId:"La2O3",forms:[{id:"La2O3",label:"Lanthanum Oxide (La₂O₃)",factor:1.17,priceUnit:"mt",price:7000}]},
+  Ce:{name:"Cerium",defaultFormId:"CeO2",forms:[{id:"CeO2",label:"Cerium Oxide (CeO₂)",factor:1.18,priceUnit:"mt",price:6000}]},
+  Pr:{name:"Praseodymium",defaultFormId:"Pr6O11",forms:[{id:"Pr6O11",label:"Praseodymium Oxide (Pr₆O₁₁)",factor:1.17,priceUnit:"mt",price:55000}]},
+  Nd:{name:"Neodymium",defaultFormId:"Nd2O3",forms:[{id:"Nd2O3",label:"Neodymium Oxide (Nd₂O₃)",factor:1.17,priceUnit:"mt",price:60000}]},
+  Sm:{name:"Samarium",defaultFormId:"Sm2O3",forms:[{id:"Sm2O3",label:"Samarium Oxide (Sm₂O₃)",factor:1.17,priceUnit:"mt",price:28000}]},
+  Eu:{name:"Europium",defaultFormId:"Eu2O3",forms:[{id:"Eu2O3",label:"Europium Oxide (Eu₂O₃)",factor:1.17,priceUnit:"mt",price:240000}]},
+  Gd:{name:"Gadolinium",defaultFormId:"Gd2O3",forms:[{id:"Gd2O3",label:"Gadolinium Oxide (Gd₂O₃)",factor:1.17,priceUnit:"mt",price:26000}]},
+
+  // HREE
+  Tb:{name:"Terbium",defaultFormId:"Tb4O7",forms:[{id:"Tb4O7",label:"Terbium Oxide (Tb₄O₇)",factor:1.18,priceUnit:"mt",price:800000}]},
+  Dy:{name:"Dysprosium",defaultFormId:"Dy2O3",forms:[{id:"Dy2O3",label:"Dysprosium Oxide (Dy₂O₃)",factor:1.17,priceUnit:"mt",price:390000}]},
+  Ho:{name:"Holmium",defaultFormId:"Ho2O3",forms:[{id:"Ho2O3",label:"Holmium Oxide (Ho₂O₃)",factor:1.17,priceUnit:"mt",price:140000}]},
+  Er:{name:"Erbium",defaultFormId:"Er2O3",forms:[{id:"Er2O3",label:"Erbium Oxide (Er₂O₃)",factor:1.17,priceUnit:"mt",price:75000}]},
+  Tm:{name:"Thulium",defaultFormId:"Tm2O3",forms:[{id:"Tm2O3",label:"Thulium Oxide (Tm₂O₃)",factor:1.17,priceUnit:"mt",price:180000}]},
+  Yb:{name:"Ytterbium",defaultFormId:"Yb2O3",forms:[{id:"Yb2O3",label:"Ytterbium Oxide (Yb₂O₃)",factor:1.17,priceUnit:"mt",price:38000}]},
+  Lu:{name:"Lutetium",defaultFormId:"Lu2O3",forms:[{id:"Lu2O3",label:"Lutetium Oxide (Lu₂O₃)",factor:1.17,priceUnit:"mt",price:620000}]},
+
+  // Y, Sc, Li
+  Y:{name:"Yttrium",defaultFormId:"Y_metal",forms:[
+    {id:"Y_metal",label:"Yttrium Metal 5N",factor:1.0,priceUnit:"kg",price:850},
+    {id:"Y2O3",label:"Yttrium Oxide (Y₂O₃)",factor:1.27,priceUnit:"mt",price:20000}
+  ]},
+  Sc:{name:"Scandium",defaultFormId:"Sc_metal",forms:[
+    {id:"Sc_metal",label:"Scandium Metal 5N",factor:1.0,priceUnit:"kg",price:4500},
+    {id:"Sc2O3",label:"Scandium Oxide (Sc₂O₃)",factor:1.5,priceUnit:"kg",price:3300}
+  ]},
+  Li:{name:"Lithium",defaultFormId:"Li2CO3",forms:[
+    {id:"Li2CO3",label:"Lithium Carbonate (Li₂CO₃)",factor:5.32,priceUnit:"mt",price:15000},
+    {id:"LiOH",label:"Lithium Hydroxide (LiOH·H₂O)",factor:6.29,priceUnit:"mt",price:17000}
+  ]},
+
+  // Others requested
+  Ga:{name:"Gallium",defaultFormId:"Ga2O3",forms:[
+    {id:"Ga2O3",label:"Gallium Oxide (Ga₂O₃)",factor:1.32,priceUnit:"kg",price:500}
+  ]},
+  Ge:{name:"Germanium",defaultFormId:"GeO2",forms:[
+    {id:"GeO2",label:"Germanium Dioxide (GeO₂)",factor:1.44,priceUnit:"kg",price:1200}
+  ]},
+  Zr:{name:"Zirconium",defaultFormId:"ZrO2",forms:[
+    {id:"ZrO2",label:"Zirconia (ZrO₂)",factor:1.35,priceUnit:"mt",price:2500}
+  ]},
+  Sr:{name:"Strontium",defaultFormId:"SrCO3",forms:[
+    {id:"SrCO3",label:"Strontium Carbonate (SrCO₃)",factor:1.7,priceUnit:"mt",price:3000}
+  ]},
+  V:{name:"Vanadium",defaultFormId:"V2O5",forms:[
+    {id:"V2O5",label:"Vanadium Pentoxide (V₂O₅)",factor:1.8,priceUnit:"mt",price:28000}
+  ]},
+  U:{name:"Uranium",defaultFormId:"U3O8",forms:[
+    {id:"U3O8",label:"U₃O₈ (yellowcake)",factor:1.18,priceUnit:"kg",price:190}
+  ]},
+  Th:{name:"Thorium",defaultFormId:"ThO2",forms:[
+    {id:"ThO2",label:"Thorium Oxide (ThO₂)",factor:1.17,priceUnit:"mt",price:3000}
+  ]},
+
+  // Base metals for completeness
+  Cu:{name:"Copper",defaultFormId:"Cu_cath",forms:[
+    {id:"Cu_cath",label:"Copper Cathode",factor:1.0,priceUnit:"mt",price:9000}
+  ]},
+  Ni:{name:"Nickel",defaultFormId:"Ni_metal",forms:[
+    {id:"Ni_metal",label:"Nickel Metal",factor:1.0,priceUnit:"mt",price:18000}
+  ]},
+  Zn:{name:"Zinc",defaultFormId:"Zn_metal",forms:[
+    {id:"Zn_metal",label:"Zinc Metal",factor:1.0,priceUnit:"mt",price:2700}
+  ]},
+  Co:{name:"Cobalt",defaultFormId:"Co_metal",forms:[
+    {id:"Co_metal",label:"Cobalt Metal",factor:1.0,priceUnit:"mt",price:33000}
+  ]},
+  Mn:{name:"Manganese",defaultFormId:"MnSO4",forms:[
+    {id:"MnSO4",label:"Manganese Sulfate",factor:1.3,priceUnit:"mt",price:2000}
+  ]},
+  Fe:{name:"Iron",defaultFormId:"Fe_conc",forms:[
+    {id:"Fe_conc",label:"Iron Concentrate",factor:1.0,priceUnit:"mt",price:120}
+  ]},
+  Al:{name:"Aluminum",defaultFormId:"Al_metal",forms:[
+    {id:"Al_metal",label:"Aluminum Metal",factor:1.0,priceUnit:"mt",price:2500}
+  ]},
+  Ti:{name:"Titanium",defaultFormId:"TiO2",forms:[
+    {id:"TiO2",label:"Titanium Dioxide (TiO₂)",factor:1.66,priceUnit:"mt",price:3000}
+  ]},
+  Si:{name:"Silicon",defaultFormId:"SiO2",forms:[
+    {id:"SiO2",label:"Silica (SiO₂)",factor:2.14,priceUnit:"mt",price:50}
+  ]},
+  Ca:{name:"Calcium",defaultFormId:"CaCO3",forms:[
+    {id:"CaCO3",label:"Calcium Carbonate (CaCO₃)",factor:2.5,priceUnit:"mt",price:40}
+  ]},
+  Mg:{name:"Magnesium",defaultFormId:"MgO",forms:[
+    {id:"MgO",label:"Magnesia (MgO)",factor:1.66,priceUnit:"mt",price:300}
+  ]},
+
+  C_GO:{name:"Graphene Oxide",defaultFormId:"GO_powder",forms:[
+    {id:"GO_powder",label:"Graphene Oxide Powder",factor:1.0,priceUnit:"kg",price:700}
+  ]}
 };
 
-const fedNo2AvgPpm = { Au:0.12, Ag:5, Nd:48.32, Dy:8.53, Sc:44.12, Y:35.39, Li:77.12, Cu:50 };
+const fedNo2AvgPpm = {
+  Sc:44.12, Y:35.39, La:49.41, Ce:105.78, Pr:13.78, Nd:48.32, Sm:11.77, Eu:2.73, Gd:9.33,
+  Tb:1.40, Dy:8.53, Ho:1.83, Er:6.72, Tm:0.68, Yb:3.46, Lu:0.72,
+  Li:77.12, Ga:26.0, Zr:157.0, V:100.0, Co:5.0, Sr:183.0, Ni:27.0, Zn:85.0, Cu:50.0
+};
+
 const capexBlocks = [
   {id:"feed", label:"Feed Handling & Liberation", base:8000000, exp:0.6},
   {id:"chips", label:"CHIPS Leach & Precipitation", base:12000000, exp:0.6},
@@ -486,7 +605,7 @@ function buildMassFlowTable() {
       <td><input type="number" class="mf-factor" value="${d.factor}" step="0.01"></td>
       <td><select class="mf-price-unit"><option value="mt" ${d.priceUnit==='mt'?'selected':''}>USD/t</option><option value="kg" ${d.priceUnit==='kg'?'selected':''}>USD/kg</option><option value="oz" ${d.priceUnit==='oz'?'selected':''}>USD/oz</option></select></td>
       <td><input type="number" class="mf-price" value="${d.price}"></td>
-      <td class="text-center mf-metal-ty">0</td><td class="text-center mf-prod-ty">0</td><td class="text-center mf-revenue">0</td>
+      <td class="text-center mf-metal-ty">0</td><td class="text-center mf-prod-ty">0</td><td class="text-center mf-mass-kg">0</td><td class="text-center mf-mass-oz">0</td><td class="text-center mf-revenue">0</td>
     `;
     tbody.appendChild(row);
   });
@@ -534,7 +653,7 @@ function recalcStep1(){
 }
 
 function recalcMassFlow(p){
-  let totalRev=0; cachedMassResults=[];
+  let totalRev=0; let totalMassKg=0; cachedMassResults=[];
   document.querySelectorAll("#massFlowBody tr").forEach(tr=>{
     const sym=tr.dataset.symbol; const meta=elementDB[sym];
     const ppm=parseFloat(tr.querySelector(".mf-ppm").value)||0;
@@ -545,21 +664,30 @@ function recalcMassFlow(p){
 
     const metalT=p.mtpy*(ppm/1e6)*(rec/100);
     const prodT=metalT*factor;
+    const kg=prodT*1000;
+    const oz=kg*1000/31.1035;
     let rev=0;
     if (pu==="mt") rev=prodT*price;
-    else if (pu==="kg") rev=prodT*1000*price;
-    else rev=prodT*1000*1000/31.1035*price;
+    else if (pu==="kg") rev=kg*price;
+    else rev=oz*price;
 
     tr.querySelector(".mf-metal-ty").textContent=fmt(metalT,4);
     tr.querySelector(".mf-prod-ty").textContent=fmt(prodT,4);
+    tr.querySelector(".mf-mass-kg").textContent=fmt(kg,0);
+    tr.querySelector(".mf-mass-oz").textContent=fmt(oz,0);
     tr.querySelector(".mf-revenue").textContent=fmt(rev,0);
     totalRev += rev;
+    totalMassKg += kg;
 
     const resProdT = p.reservesMt*(ppm/1e6)*(rec/100)*factor;
-    const resVal = pu==="mt" ? resProdT*price : pu==="kg" ? resProdT*1000*price : resProdT*1000*1000/31.1035*price;
-    cachedMassResults.push({element:meta.name,form:tr.querySelector('.mf-form').value,prodT,revenue:rev,resProdT,resVal});
+    const resKg = resProdT*1000;
+    const resOz = resKg*1000/31.1035;
+    const resVal = pu==="mt" ? resProdT*price : pu==="kg" ? resKg*price : resOz*price;
+    cachedMassResults.push({element:meta.name,form:tr.querySelector('.mf-form').value,prodT,revenue:rev,resProdT,resOz,resVal});
   });
   document.getElementById("mfTotalRevenue").textContent=fmt(totalRev,0);
+  const massCell=document.getElementById("mfTotalMassKg");
+  if(massCell) massCell.textContent=fmt(totalMassKg,0)+" kg/yr";
   return totalRev;
 }
 
@@ -603,15 +731,17 @@ function recalcCoalSales(p){
 
 function recalcValuation(){
   const tbody=document.getElementById("valuationBody"); tbody.innerHTML="";
-  let annual=0,resT=0,resV=0;
+  let annual=0,resT=0,resOz=0,resV=0;
   cachedMassResults.forEach(r=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${r.element}</td><td>${r.form}</td><td class="text-center">${fmt(r.prodT,4)}</td><td class="text-center">${fmt(r.revenue,0)}</td><td class="text-center">${fmt(r.resProdT,4)}</td><td class="text-center">${fmt(r.resVal,0)}</td>`;
+    tr.innerHTML=`<td>${r.element}</td><td>${r.form}</td><td class="text-center">${fmt(r.prodT,4)}</td><td class="text-center">${fmt(r.revenue,0)}</td><td class="text-center">${fmt(r.resProdT,4)}</td><td class="text-center">${fmt(r.resOz||0,0)}</td><td class="text-center">${fmt(r.resVal,0)}</td>`;
     tbody.appendChild(tr);
-    annual+=r.revenue;resT+=r.resProdT;resV+=r.resVal;
+    annual+=r.revenue;resT+=r.resProdT;resOz+=(r.resOz||0);resV+=r.resVal;
   });
   document.getElementById("valTotalAnnualRev").textContent=fmt(annual,0);
   document.getElementById("valTotalResT").textContent=fmt(resT,4);
+  const oz=document.getElementById("valTotalResOz");
+  if(oz) oz.textContent=fmt(resOz,0);
   document.getElementById("valTotalResValue").textContent=fmt(resV,0);
 }
 
