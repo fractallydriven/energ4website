@@ -295,6 +295,28 @@
           <tr><td colspan="12" class="text-right small">Total annual product mass (all products)</td><td class="text-center" id="mfTotalMassKg">0 kg/yr</td></tr>
         </tfoot>
       </table>
+
+      <h3>Detailed Mass Flow Audit</h3>
+      <div class="note">Expanded audit output to preserve full-detail review while keeping core math unchanged.</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Element</th><th>Symbol</th><th>Form</th>
+            <th class="text-center">Feed (t/yr)</th>
+            <th class="text-center">Grade Fraction</th>
+            <th class="text-center">Recovery Fraction</th>
+            <th class="text-center">Contained Metal (t/yr)</th>
+            <th class="text-center">Product Factor</th>
+            <th class="text-center">Product (t/yr)</th>
+            <th class="text-center">Product (kg/yr)</th>
+            <th class="text-center">Product (oz/yr)</th>
+            <th class="text-center">Price Unit</th>
+            <th class="text-center">Price</th>
+            <th class="text-center">Revenue</th>
+          </tr>
+        </thead>
+        <tbody id="massFlowAuditBody"></tbody>
+      </table>
     </section>
 
     <section id="step3" class="step">
@@ -331,6 +353,25 @@
         <tbody id="valuationBody"></tbody>
         <tfoot><tr class="section-header"><td colspan="3">Totals</td><td class="text-center" id="valTotalAnnualRev">0</td><td class="text-center" id="valTotalResT">0</td><td class="text-center" id="valTotalResOz">0</td><td class="text-center" id="valTotalResValue">0</td></tr></tfoot>
       </table>
+
+      <h3>Detailed Reserve Audit</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Element</th><th>Symbol</th><th>Form</th>
+            <th class="text-center">Reserves Feed (t)</th>
+            <th class="text-center">Grade Fraction</th>
+            <th class="text-center">Recovery Fraction</th>
+            <th class="text-center">Contained Metal (t)</th>
+            <th class="text-center">Product Factor</th>
+            <th class="text-center">Reserve Product (t)</th>
+            <th class="text-center">Reserve Product (kg)</th>
+            <th class="text-center">Reserve Product (oz)</th>
+            <th class="text-center">Reserve Value (USD)</th>
+          </tr>
+        </thead>
+        <tbody id="reserveAuditBody"></tbody>
+      </table>
     </section>
 
     <section id="step5" class="step">
@@ -341,6 +382,21 @@
       <table>
         <thead><tr><th>Element</th><th>Form</th><th class="text-center">Scheduled (t/yr)</th><th class="text-center">Nameplate (t/yr)</th><th class="text-center">% of Nameplate</th></tr></thead>
         <tbody id="scheduleBody"></tbody>
+      </table>
+
+      <h3>Monthly Production Detail (M1–M12)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Element</th><th>Form</th>
+            <th class="text-center">M1</th><th class="text-center">M2</th><th class="text-center">M3</th><th class="text-center">M4</th><th class="text-center">M5</th><th class="text-center">M6</th>
+            <th class="text-center">M7</th><th class="text-center">M8</th><th class="text-center">M9</th><th class="text-center">M10</th><th class="text-center">M11</th><th class="text-center">M12</th>
+            <th class="text-center">Scheduled</th>
+            <th class="text-center">Nameplate</th>
+            <th class="text-center">%</th>
+          </tr>
+        </thead>
+        <tbody id="scheduleMonthBody"></tbody>
       </table>
     </section>
 
@@ -591,6 +647,9 @@ let cachedMassResults = [];
 let cachedCoalGoRev = 0;
 let cachedStartupTotal = 0;
 let cachedCashFlows = [];
+let cachedMassAudit = [];
+let cachedReserveAudit = [];
+let cachedScheduleMonthly = [];
 
 function buildMassFlowTable() {
   const tbody = document.getElementById("massFlowBody"); tbody.innerHTML = "";
@@ -653,7 +712,7 @@ function recalcStep1(){
 }
 
 function recalcMassFlow(p){
-  let totalRev=0; let totalMassKg=0; cachedMassResults=[];
+  let totalRev=0; let totalMassKg=0; cachedMassResults=[]; cachedMassAudit=[]; cachedReserveAudit=[];
   document.querySelectorAll("#massFlowBody tr").forEach(tr=>{
     const sym=tr.dataset.symbol; const meta=elementDB[sym];
     const ppm=parseFloat(tr.querySelector(".mf-ppm").value)||0;
@@ -683,11 +742,24 @@ function recalcMassFlow(p){
     const resKg = resProdT*1000;
     const resOz = resKg*1000/31.1035;
     const resVal = pu==="mt" ? resProdT*price : pu==="kg" ? resKg*price : resOz*price;
-    cachedMassResults.push({element:meta.name,form:tr.querySelector('.mf-form').value,prodT,revenue:rev,resProdT,resOz,resVal});
+    const gradeFrac = ppm/1e6;
+    const recFrac = rec/100;
+    cachedMassResults.push({element:meta.name,sym,form:tr.querySelector('.mf-form').value,prodT,revenue:rev,resProdT,resOz,resVal,gradeFrac,recFrac,factor,metalT,price,pu,kg,oz});
+    cachedMassAudit.push({element:meta.name,sym,form:tr.querySelector('.mf-form').value,feed:p.mtpy,gradeFrac,recFrac,metalT,factor,prodT,kg,oz,pu,price,revenue:rev});
+    cachedReserveAudit.push({element:meta.name,sym,form:tr.querySelector('.mf-form').value,resFeed:p.reservesMt,gradeFrac,recFrac,resMetalT:p.reservesMt*gradeFrac*recFrac,factor,resProdT,resKg,resOz,resVal});
   });
   document.getElementById("mfTotalRevenue").textContent=fmt(totalRev,0);
   const massCell=document.getElementById("mfTotalMassKg");
   if(massCell) massCell.textContent=fmt(totalMassKg,0)+" kg/yr";
+  const auditBody=document.getElementById('massFlowAuditBody');
+  if(auditBody){
+    auditBody.innerHTML='';
+    cachedMassAudit.forEach(r=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${r.element}</td><td>${r.sym}</td><td>${r.form}</td><td class="text-center">${fmt(r.feed,0)}</td><td class="text-center">${fmt(r.gradeFrac,8)}</td><td class="text-center">${fmt(r.recFrac,4)}</td><td class="text-center">${fmt(r.metalT,6)}</td><td class="text-center">${fmt(r.factor,4)}</td><td class="text-center">${fmt(r.prodT,6)}</td><td class="text-center">${fmt(r.kg,2)}</td><td class="text-center">${fmt(r.oz,2)}</td><td class="text-center">${r.pu}</td><td class="text-center">${fmt(r.price,2)}</td><td class="text-center">${fmt(r.revenue,0)}</td>`;
+      auditBody.appendChild(tr);
+    });
+  }
   return totalRev;
 }
 
@@ -743,26 +815,49 @@ function recalcValuation(){
   const oz=document.getElementById("valTotalResOz");
   if(oz) oz.textContent=fmt(resOz,0);
   document.getElementById("valTotalResValue").textContent=fmt(resV,0);
+
+  const reserveAuditBody=document.getElementById('reserveAuditBody');
+  if(reserveAuditBody){
+    reserveAuditBody.innerHTML='';
+    cachedReserveAudit.forEach(r=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${r.element}</td><td>${r.sym}</td><td>${r.form}</td><td class="text-center">${fmt(r.resFeed,0)}</td><td class="text-center">${fmt(r.gradeFrac,8)}</td><td class="text-center">${fmt(r.recFrac,4)}</td><td class="text-center">${fmt(r.resMetalT,6)}</td><td class="text-center">${fmt(r.factor,4)}</td><td class="text-center">${fmt(r.resProdT,6)}</td><td class="text-center">${fmt(r.resKg,2)}</td><td class="text-center">${fmt(r.resOz,2)}</td><td class="text-center">${fmt(r.resVal,0)}</td>`;
+      reserveAuditBody.appendChild(tr);
+    });
+  }
 }
 
 function recalcSchedule(){
   const rampMonths=parseInt(document.getElementById("rampMonths").value)||6;
   const startPct=(parseFloat(document.getElementById("rampStartPct").value)||0)/100;
   const tbody=document.getElementById("scheduleBody"); tbody.innerHTML="";
+  const monthBody=document.getElementById("scheduleMonthBody"); if(monthBody) monthBody.innerHTML="";
+  cachedScheduleMonthly=[];
   cachedMassResults.forEach(r=>{
     if (r.prodT<=0) return;
-    const monthly=r.prodT/12; let sched=0;
+    const monthly=r.prodT/12; let sched=0; const months=[];
     for(let m=1;m<=12;m++){
       let f;
       if (m===1) f=startPct;
       else if (m<=rampMonths){ const frac=(m-1)/Math.max(1,rampMonths-1); f=startPct+(1-startPct)*frac; }
       else f=1;
-      sched += monthly*f;
+      const mv=monthly*f;
+      months.push(mv);
+      sched += mv;
     }
     const tr=document.createElement("tr");
     tr.innerHTML=`<td>${r.element}</td><td>${r.form}</td><td class="text-center">${fmt(sched,4)}</td><td class="text-center">${fmt(r.prodT,4)}</td><td class="text-center">${fmt(100*sched/(r.prodT||1),1)}%</td>`;
     tbody.appendChild(tr);
+    cachedScheduleMonthly.push({element:r.element,form:r.form,months,sched,name:r.prodT,pct:100*sched/(r.prodT||1)});
   });
+
+  if(monthBody){
+    cachedScheduleMonthly.forEach(r=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${r.element}</td><td>${r.form}</td>${r.months.map(v=>`<td class="text-center">${fmt(v,3)}</td>`).join('')}<td class="text-center">${fmt(r.sched,4)}</td><td class="text-center">${fmt(r.name,4)}</td><td class="text-center">${fmt(r.pct,1)}%</td>`;
+      monthBody.appendChild(tr);
+    });
+  }
 }
 
 function recalcCapex(p){
