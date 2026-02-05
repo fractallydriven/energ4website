@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ENERG4 – Mass Flow & TEA Workbook</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --bg: #f3f4f6;
+      --panel: #ffffff;
+      --ink: #111827;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --head: #111827;
+      --head-2: #1f2937;
+      --accent: #2563eb;
+      --shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top right, #eef2ff 0%, var(--bg) 40%);
+      color: var(--ink);
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: linear-gradient(135deg, #0f172a 0%, #111827 60%, #1f2937 100%);
+      color: #f9fafb;
+      padding: 12px 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0.04em;
+    }
+    header p {
+      margin: 4px 0 0;
+      font-size: 12px;
+      opacity: 0.8;
+    }
+    .toolbar {
+      margin-top: 8px;
+      display:flex;
+      flex-wrap: wrap;
+      gap:6px;
+    }
+    .toolbar button {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid #4b5563;
+      background: #1f2937;
+      color: #f9fafb;
+      cursor: pointer;
+      transition: all .15s ease;
+    }
+    .toolbar button:hover {
+      background: #374151;
+      transform: translateY(-1px);
+    }
+
+    .layout {
+      display: flex;
+      min-height: calc(100vh - 60px);
+    }
+    nav.sidebar {
+      width: 300px;
+      background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      color: #e5e7eb;
+      padding: 10px 0;
+      overflow-y: auto;
+      border-right: 1px solid rgba(255,255,255,0.08);
+      box-shadow: inset -1px 0 0 rgba(255,255,255,0.04);
+    }
+    .step-link {
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      user-select: none;
+      border-left: 3px solid transparent;
+      transition: all .12s ease;
+    }
+    .step-link:hover {
+      background: #1f2937;
+    }
+    .step-link.active {
+      background: #f9fafb;
+      color: #111827;
+      font-weight: 600;
+      border-left-color: var(--accent);
+    }
+
+    main.content {
+      flex: 1;
+      padding: 16px 18px 40px;
+      overflow-x: auto;
+    }
+    section.step {
+      display: none;
+    }
+    section.step.active {
+      display: block;
+    }
+    h2 {
+      margin-top: 0;
+      margin-bottom: 6px;
+      font-size: 18px;
+    }
+    h3 {
+      margin-top: 16px;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+    .note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      max-width: 1000px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 1400px;
+      background: var(--panel);
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 12px;
+      margin-bottom: 12px;
+      table-layout: auto;
+      box-shadow: var(--shadow);
+    }
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 5px 6px;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+    th {
+      background: #f8fafc;
+      text-align: left;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    tr:nth-child(even) td {
+      background: #f9fafb;
+    }
+    tr.section-header td {
+      background: #e2e8f0;
+      font-weight: 700;
+    }
+    input[type="number"],
+    input[type="text"],
+    select,
+    textarea {
+      width: 100%;
+      font-size: 11px;
+      padding: 3px 4px;
+      border-radius: 3px;
+      border: 1px solid #d1d5db;
+    }
+    input[type="number"] { text-align: right; }
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: 1px solid #2563eb;
+      border-color: #2563eb;
+    }
+    .summary-row {
+      display: flex;
+      flex-wrap: wrap;
+      margin: 4px 0 10px;
+      gap: 8px;
+    }
+    .summary-card {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border-radius: 6px;
+      padding: 6px 10px;
+      border-left: 4px solid #2563eb;
+      box-shadow: 0 6px 18px rgba(15,23,42,0.08);
+      font-size: 12px;
+      min-width: 180px;
+    }
+    .summary-card strong {
+      display: block;
+      margin-bottom: 2px;
+    }
+    .small {
+      font-size: 11px;
+      color: #4b5563;
+    }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+
+    @media print {
+      nav.sidebar, header, .toolbar {
+        display: none !important;
+      }
+      main.content {
+        padding: 0;
+      }
+      section.step {
+        display: block !important;
+        page-break-after: always;
+      }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>ENERG4 – Mass Flow &amp; TEA Workbook</h1>
+  <p>Full workbook: Project → Mass Flow → Coal Sales/GO → Valuation → Schedule → CAPEX → Startup → OPEX → Financials → Balance Sheet → Cash Flow → Investor.</p>
+  <div class="toolbar">
+    <button id="btnExportHtml">Download HTML Snapshot</button>
+    <button id="btnExportMd">Download Markdown Summary</button>
+    <button id="btnExportJson">Download Scenario JSON</button>
+    <button id="btnExportExcel">Download Excel Workbook</button>
+    <button id="btnPrint">Print / PDF</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar">
+    <div class="step-link active" data-step="step1">Step 1 – Project Parameters</div>
+    <div class="step-link" data-step="step2">Step 2 – Element Mass Flow</div>
+    <div class="step-link" data-step="step3">Step 3 – Coal Sales &amp; Graphene Oxide</div>
+    <div class="step-link" data-step="step4">Step 4 – Valuation &amp; Reserves</div>
+    <div class="step-link" data-step="step5">Step 5 – Production Schedule</div>
+    <div class="step-link" data-step="step6">Step 6 – CAPEX + Site Development</div>
+    <div class="step-link" data-step="step7">Step 7 – Startup Costs</div>
+    <div class="step-link" data-step="step8">Step 8 – OPEX</div>
+    <div class="step-link" data-step="step9">Step 9 – Income &amp; Ratios</div>
+    <div class="step-link" data-step="step10">Step 10 – Balance Sheet</div>
+    <div class="step-link" data-step="step11">Step 11 – 10-Year Cash Flow</div>
+    <div class="step-link" data-step="step12">Step 12 – Investor Waterfall</div>
+  </nav>
+
+  <main class="content">
+    <section id="step1" class="step active">
+      <h2>Step 1 – Project Parameters</h2>
+      <div class="note">Core inputs retained. Added toggle for Fixed Carbon / Coal Sales / GO integration defaults.</div>
+      <table>
+        <thead><tr><th>Category</th><th>Parameter</th><th class="text-center">Value</th><th>Unit</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr class="section-header"><td colspan="5">Project Meta</td></tr>
+          <tr><td>Meta</td><td>Project Name</td><td><input type="text" id="projName" value="Fed No 2 Mine Pilot Plant" /></td><td>–</td><td></td></tr>
+          <tr><td>Meta</td><td>Location</td><td><input type="text" id="projLocation" value="West Virginia, USA" /></td><td>–</td><td></td></tr>
+          <tr><td>Meta</td><td>Matrix Type</td><td><input type="text" id="projMatrix" value="Coal Refuse" /></td><td>–</td><td></td></tr>
+
+          <tr class="section-header"><td colspan="5">Feed &amp; Runtime</td></tr>
+          <tr><td>Feed</td><td>Feed Rate (design)</td><td><input type="number" id="feedMtpd" value="500" step="1" /></td><td>mt/day</td><td></td></tr>
+          <tr><td>Runtime</td><td>Operating Hours / Day</td><td><input type="number" id="hoursPerDay" value="24" step="1" /></td><td>h/day</td><td></td></tr>
+          <tr><td>Runtime</td><td>Operating Days / Year</td><td><input type="number" id="daysPerYear" value="330" step="1" /></td><td>days/yr</td><td></td></tr>
+          <tr><td>Feed (derived)</td><td>Feed mt/hr</td><td class="text-right" id="outFeedMtph">0</td><td>mt/hr</td><td></td></tr>
+          <tr><td>Feed (derived)</td><td>Annual Throughput</td><td class="text-right" id="outFeedMtpy">0</td><td>mt/yr</td><td></td></tr>
+
+          <tr class="section-header"><td colspan="5">Recovery &amp; Carbon Pathway</td></tr>
+          <tr><td>Recovery</td><td>Global Recovery (default)</td><td><input type="number" id="globalRecoveryPct" value="80" step="1" /></td><td>%</td><td></td></tr>
+          <tr><td>Reserves</td><td>Total Reserves Feed</td><td><input type="number" id="reservesMt" value="34000000" step="1000" /></td><td>mt feed</td><td></td></tr>
+          <tr><td>Toggle</td><td>Include Fixed Carbon + Coal + GO</td><td><select id="useFixedCarbon"><option value="yes" selected>YES</option><option value="no">NO</option></select></td><td>Y/N</td><td>If NO, step 3 values are excluded.</td></tr>
+          <tr><td>Fixed C</td><td>Fixed Carbon in Feed</td><td><input type="number" id="fixedCarbonPct" value="35" step="1" /></td><td>wt%</td><td></td></tr>
+          <tr><td>GO</td><td>GO Conversion Yield (C → GO)</td><td><input type="number" id="goConversionPct" value="40" step="1" /></td><td>% of fixed C</td><td></td></tr>
+          <tr><td>GO</td><td>Portion of Fixed C sent to GO</td><td><input type="number" id="goSharePct" value="100" step="1" /></td><td>%</td><td></td></tr>
+        </tbody>
+      </table>
+      <div class="summary-row">
+        <div class="summary-card"><strong>Annual Feed</strong><span id="sum1Feed">0</span></div>
+        <div class="summary-card"><strong>GO Nameplate</strong><span id="sum1GO">0</span></div>
+      </div>
+      <textarea id="scenarioJson" placeholder="Scenario JSON"></textarea>
+    </section>
+
+    <section id="step2" class="step">
+      <h2>Step 2 – Element Mass Flow (Averages)</h2>
+      <div class="note">Mass flow retained. Coal/GO removed from this table and moved to Step 3.</div>
+      <table>
+        <thead>
+          <tr><th>Element</th><th>Symbol</th><th>Form</th><th class="text-center">Grade (ppm)</th><th class="text-center">Recovery (%)</th><th class="text-center">Factor</th><th>Price Unit</th><th class="text-center">Price</th><th class="text-center">Metal (t/yr)</th><th class="text-center">Product (t/yr)</th><th class="text-center">Annual Revenue (USD)</th></tr>
+        </thead>
+        <tbody id="massFlowBody"></tbody>
+        <tfoot><tr class="section-header"><td colspan="10">Total Metals Revenue</td><td class="text-center" id="mfTotalRevenue">0</td></tr></tfoot>
+      </table>
+    </section>
+
+    <section id="step3" class="step">
+      <h2>Step 3 – Coal Sales &amp; Graphene Oxide</h2>
+      <table><thead><tr><th>Parameter</th><th>Value</th><th>Unit</th><th>Notes</th></tr></thead><tbody>
+        <tr><td>Integrate Coal Sales</td><td><select id="integrateCoalSales"><option value="yes" selected>YES</option><option value="no">NO</option></select></td><td>Y/N</td><td>If YES, included in revenue/financials.</td></tr>
+        <tr><td>Coal Wash Recovery</td><td><input type="number" id="coalWashRecPct" value="68" step="1"></td><td>%</td><td></td></tr>
+      </tbody></table>
+
+      <h3>Domestic Sales</h3>
+      <table><tbody>
+        <tr><td>Domestic Share</td><td><input type="number" id="coalDomesticSharePct" value="60"></td><td>%</td><td class="text-right" id="coalDomesticT">0 t/yr</td></tr>
+        <tr><td>Domestic Price</td><td><input type="number" id="coalDomesticPrice" value="68"></td><td>USD/t</td><td class="text-right" id="coalDomesticRev">0</td></tr>
+      </tbody></table>
+
+      <h3>Export Sales</h3>
+      <table><tbody>
+        <tr><td>Export Share</td><td class="text-center" id="coalExportSharePct">40</td><td>%</td><td class="text-right" id="coalExportT">0 t/yr</td></tr>
+        <tr><td>Export Price</td><td><input type="number" id="coalExportPrice" value="82"></td><td>USD/t</td><td class="text-right" id="coalExportRev">0</td></tr>
+      </tbody><tfoot><tr class="section-header"><td colspan="3">Total Coal Revenue</td><td class="text-right" id="coalTotalRev">0</td></tr></tfoot></table>
+
+      <h3>Graphene Oxide</h3>
+      <table><tbody>
+        <tr><td>GO Grade</td><td><select id="goGrade"><option value="low">Low – 150/kg</option><option value="mid">Mid – 400/kg</option><option value="high" selected>High – 700/kg</option></select></td><td>band</td><td></td></tr>
+        <tr><td>GO Price Override</td><td><input type="number" id="goPricePerKg" value="700"></td><td>USD/kg</td><td></td></tr>
+        <tr><td>GO Product</td><td class="text-right" id="goProdT">0</td><td>t/yr</td><td class="text-right" id="goRev">0</td></tr>
+      </tbody><tfoot><tr class="section-header"><td colspan="3">Coal + GO Revenue (integratable)</td><td class="text-right" id="coalGoTotalRev">0</td></tr></tfoot></table>
+    </section>
+
+    <section id="step4" class="step">
+      <h2>Step 4 – Valuation &amp; Reserves</h2>
+      <table>
+        <thead><tr><th>Element</th><th>Form</th><th class="text-center">Annual Product (t/yr)</th><th class="text-center">Annual Revenue (USD)</th><th class="text-center">Reserve Product (t)</th><th class="text-center">Reserve Value (USD)</th></tr></thead>
+        <tbody id="valuationBody"></tbody>
+        <tfoot><tr class="section-header"><td colspan="3">Totals</td><td class="text-center" id="valTotalAnnualRev">0</td><td class="text-center" id="valTotalResT">0</td><td class="text-center" id="valTotalResValue">0</td></tr></tfoot>
+      </table>
+    </section>
+
+    <section id="step5" class="step">
+      <h2>Step 5 – Production Schedule</h2>
+      <table><tbody>
+        <tr><td>Ramp Months</td><td><input type="number" id="rampMonths" value="6" min="1" max="12" /></td><td>Start %</td><td><input type="number" id="rampStartPct" value="30" min="0" max="100" /></td></tr>
+      </tbody></table>
+      <table>
+        <thead><tr><th>Element</th><th>Form</th><th class="text-center">Scheduled (t/yr)</th><th class="text-center">Nameplate (t/yr)</th><th class="text-center">% of Nameplate</th></tr></thead>
+        <tbody id="scheduleBody"></tbody>
+      </table>
+    </section>
+
+    <section id="step6" class="step">
+      <h2>Step 6 – CAPEX + Site Development</h2>
+      <table><tbody>
+        <tr><td>Scale Exponent</td><td><input type="number" id="capexScaleExp" value="0.6" step="0.05"></td><td>Indirect %</td><td><input type="number" id="capexIndirectPct" value="25"></td></tr>
+        <tr><td>Owner %</td><td><input type="number" id="capexOwnerPct" value="5"></td><td>ITC %</td><td><input type="number" id="capexItcPct" value="30"></td></tr>
+      </tbody></table>
+      <table><thead><tr><th>Block</th><th>Base @1000tpd</th><th>Exp</th><th>Auto</th><th>Override</th><th>Final</th></tr></thead><tbody id="capexBody"></tbody></table>
+      <h3>Site Development</h3>
+      <table><tbody>
+        <tr><td>Land Mode</td><td><select id="siteLandMode"><option value="purchase" selected>Purchase</option><option value="lease">Lease</option></select></td><td>Land Purchase</td><td><input type="number" id="siteLandPurchase" value="1500000"></td></tr>
+        <tr><td>Lease Annual</td><td><input type="number" id="siteLeaseAnnual" value="250000"></td><td>Lease Years</td><td><input type="number" id="siteLeaseYears" value="20"></td></tr>
+        <tr><td>Utilities Tie-ins</td><td><input type="number" id="siteUtilities" value="1200000"></td><td>Road/Civil</td><td><input type="number" id="siteCivil" value="1800000"></td></tr>
+      </tbody></table>
+      <h3>Primary Metal Building</h3>
+      <table><tbody>
+        <tr><td>Building Area</td><td><input type="number" id="bldgSqft" value="50000"></td><td>Cost / sqft</td><td><input type="number" id="bldgCostPerSqft" value="180"></td></tr>
+        <tr><td>Building CAPEX</td><td id="bldgCapex" class="text-right">0</td><td></td><td></td></tr>
+      </tbody></table>
+      <table><tbody>
+        <tr><td>Total CAPEX</td><td id="capexTotal" class="text-right">0</td></tr>
+        <tr><td>Net CAPEX</td><td id="capexNet" class="text-right">0</td></tr>
+      </tbody></table>
+    </section>
+
+    <section id="step7" class="step">
+      <h2>Step 7 – Startup Costs</h2>
+      <table><tbody>
+        <tr><td>3rd Party Engineering</td><td><input type="number" id="startupEng" value="750000"></td></tr>
+        <tr><td>Commissioning Team</td><td><input type="number" id="startupComm" value="450000"></td></tr>
+        <tr><td>Initial Spares</td><td><input type="number" id="startupSpares" value="600000"></td></tr>
+        <tr><td>Training / SOP / Safety</td><td><input type="number" id="startupTraining" value="180000"></td></tr>
+        <tr class="section-header"><td>Total Startup Cost</td><td id="startupTotal" class="text-right">0</td></tr>
+      </tbody></table>
+      <h3>Draw Down</h3>
+      <table><tbody>
+        <tr><td>Pre-FEED %</td><td><input type="number" id="dd1" value="15"></td><td id="dd1Amt" class="text-right">0</td></tr>
+        <tr><td>Engineering %</td><td><input type="number" id="dd2" value="35"></td><td id="dd2Amt" class="text-right">0</td></tr>
+        <tr><td>Construction %</td><td><input type="number" id="dd3" value="40"></td><td id="dd3Amt" class="text-right">0</td></tr>
+        <tr><td>Commissioning %</td><td><input type="number" id="dd4" value="10"></td><td id="dd4Amt" class="text-right">0</td></tr>
+      </tbody></table>
+    </section>
+
+    <section id="step8" class="step">
+      <h2>Step 8 – OPEX (Feed Baselined)</h2>
+      <table><tbody><tr><td>OPEX Baseline Feed</td><td><input type="number" id="opexBaselineMtpd" value="500"></td><td>mt/day</td><td>Fixed costs scale from this baseline.</td></tr></tbody></table>
+      <table><thead><tr><th>Item</th><th>Baseline Annual</th><th>Scaled Annual</th></tr></thead><tbody>
+        <tr><td>Operations Labor</td><td><input type="number" id="fxOperLabor" value="1800000" /></td><td id="fxOperScaled" class="text-right">0</td></tr>
+        <tr><td>Maintenance Labor</td><td><input type="number" id="fxMaintLabor" value="950000" /></td><td id="fxMaintScaled" class="text-right">0</td></tr>
+        <tr><td>G&amp;A</td><td><input type="number" id="fxSupport" value="850000" /></td><td id="fxSupportScaled" class="text-right">0</td></tr>
+        <tr><td>Property Tax &amp; Insurance</td><td><input type="number" id="fxTaxIns" value="500000" /></td><td id="fxTaxInsScaled" class="text-right">0</td></tr>
+      </tbody></table>
+      <table><thead><tr><th>Variable Item</th><th>$ / t feed</th><th>Annual Cost</th></tr></thead><tbody id="varOpexBody"></tbody></table>
+      <table><tbody><tr><td>Total OPEX Annual</td><td id="opxAnnualTotal" class="text-right">0</td></tr></tbody></table>
+    </section>
+
+    <section id="step9" class="step">
+      <h2>Step 9 – Income Statement &amp; Financial Ratios</h2>
+      <table><tbody>
+        <tr><td>Tax Rate</td><td><input type="number" id="finTaxRate" value="21" step="0.5" /></td></tr>
+        <tr><td>COGS %</td><td><input type="number" id="finCogsPct" value="0" step="1" /></td></tr>
+        <tr><td>Royalty %</td><td><input type="number" id="finRoyaltyRevPct" value="0" step="0.5" /></td></tr>
+        <tr><td>Depreciation Years</td><td><input type="number" id="finDepYears" value="10" step="1" /></td></tr>
+      </tbody></table>
+      <table><tbody>
+        <tr><td>Total Revenue</td><td id="isRevenue" class="text-right">0</td></tr>
+        <tr><td>Net Income</td><td id="isNet" class="text-right">0</td></tr>
+        <tr><td>Profitability</td><td id="ratioProfit" class="text-right">0</td></tr>
+      </tbody></table>
+    </section>
+
+    <section id="step10" class="step">
+      <h2>Step 10 – Balance Sheet</h2>
+      <table><thead><tr><th>Assets</th><th>Amount</th><th>Liabilities/Equity</th><th>Amount</th></tr></thead><tbody>
+        <tr><td>PP&amp;E (CAPEX + Startup)</td><td id="bsPPE" class="text-right">0</td><td>Debt</td><td id="bsDebt" class="text-right">0</td></tr>
+        <tr><td>Cash</td><td><input type="number" id="bsCash" value="1000000"></td><td>Current Liabilities</td><td><input type="number" id="bsCurrentLiab" value="500000"></td></tr>
+        <tr><td>Inventory</td><td><input type="number" id="bsInventory" value="350000"></td><td>Paid-in Equity</td><td id="bsEquityPaid" class="text-right">0</td></tr>
+        <tr><td>Receivables</td><td><input type="number" id="bsAR" value="600000"></td><td>Retained Earnings</td><td id="bsRetained" class="text-right">0</td></tr>
+        <tr class="section-header"><td>Total Assets</td><td id="bsAssets" class="text-right">0</td><td>Total L+E</td><td id="bsLE" class="text-right">0</td></tr>
+      </tbody></table>
+    </section>
+
+    <section id="step11" class="step">
+      <h2>Step 11 – 10-Year Cash Flow</h2>
+      <table><tbody><tr><td>Project Life</td><td><input type="number" id="cfYears" value="10" step="1" /></td><td>Discount Rate</td><td><input type="number" id="cfDiscRate" value="10" step="0.5" /></td></tr></tbody></table>
+      <table><thead><tr><th>Year</th><th>Net Cash Flow</th><th>Disc Cash Flow</th></tr></thead><tbody id="cfBody"></tbody><tfoot><tr class="section-header"><td>NPV</td><td id="cfNpv" class="text-right">0</td><td id="cfIrr" class="text-right">0</td></tr></tfoot></table>
+    </section>
+
+    <section id="step12" class="step">
+      <h2>Step 12 – Investor Inputs &amp; Waterfall</h2>
+      <table><tbody>
+        <tr><td>Investor Equity</td><td><input type="number" id="invEquity" value="10000000" step="100000" /></td></tr>
+        <tr><td>Debt Principal</td><td><input type="number" id="invDebt" value="0" step="100000" /></td></tr>
+        <tr><td>Debt Interest %</td><td><input type="number" id="invDebtRate" value="0" step="0.5" /></td></tr>
+        <tr><td>Investor Profit Share %</td><td><input type="number" id="invSharePct" value="40" step="1" /></td></tr>
+      </tbody></table>
+      <table><tbody>
+        <tr><td>Total Distributions to Equity</td><td id="invDistEquity" class="text-right">0</td></tr>
+        <tr><td>Equity MOIC</td><td id="invEquityMoic" class="text-right">0</td></tr>
+      </tbody></table>
+    </section>
+  </main>
+</div>
+
+<script>
+function fmt(num, dec = 0) { if (!isFinite(num)) return "0"; return num.toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
+function fmtCurr(num, dec = 0) { if (!isFinite(num)) return "$0"; return num.toLocaleString("en-US", { style:"currency", currency:"USD", minimumFractionDigits: dec, maximumFractionDigits: dec }); }
+
+const elementDB = {
+  Au:{name:"Gold",defaultFormId:"Au_metal",forms:[{id:"Au_metal",label:"Gold Metal",factor:1,priceUnit:"oz",price:2300}]},
+  Ag:{name:"Silver",defaultFormId:"Ag_metal",forms:[{id:"Ag_metal",label:"Silver Metal",factor:1,priceUnit:"oz",price:28}]},
+  Nd:{name:"Neodymium",defaultFormId:"Nd2O3",forms:[{id:"Nd2O3",label:"Neodymium Oxide",factor:1.17,priceUnit:"mt",price:60000}]},
+  Dy:{name:"Dysprosium",defaultFormId:"Dy2O3",forms:[{id:"Dy2O3",label:"Dysprosium Oxide",factor:1.17,priceUnit:"mt",price:390000}]},
+  Sc:{name:"Scandium",defaultFormId:"Sc2O3",forms:[{id:"Sc2O3",label:"Scandium Oxide",factor:1.5,priceUnit:"kg",price:3300}]},
+  Y:{name:"Yttrium",defaultFormId:"Y2O3",forms:[{id:"Y2O3",label:"Yttrium Oxide",factor:1.27,priceUnit:"mt",price:20000}]},
+  Li:{name:"Lithium",defaultFormId:"Li2CO3",forms:[{id:"Li2CO3",label:"Lithium Carbonate",factor:5.32,priceUnit:"mt",price:15000}]},
+  Cu:{name:"Copper",defaultFormId:"Cu_cath",forms:[{id:"Cu_cath",label:"Copper Cathode",factor:1,priceUnit:"mt",price:9000}]}
+};
+
+const fedNo2AvgPpm = { Au:0.12, Ag:5, Nd:48.32, Dy:8.53, Sc:44.12, Y:35.39, Li:77.12, Cu:50 };
+const capexBlocks = [
+  {id:"feed", label:"Feed Handling & Liberation", base:8000000, exp:0.6},
+  {id:"chips", label:"CHIPS Leach & Precipitation", base:12000000, exp:0.6},
+  {id:"pec", label:"PEC", base:6000000, exp:0.6},
+  {id:"sx", label:"IX / SX", base:8000000, exp:0.6}
+];
+const varOpexRows = [{id:"vx_power",label:"Power"},{id:"vx_water",label:"Water"},{id:"vx_reagents",label:"Reagents"},{id:"vx_waste",label:"Waste"}];
+
+let cachedMassResults = [];
+let cachedCoalGoRev = 0;
+let cachedStartupTotal = 0;
+let cachedCashFlows = [];
+
+function buildMassFlowTable() {
+  const tbody = document.getElementById("massFlowBody"); tbody.innerHTML = "";
+  Object.keys(elementDB).forEach(sym => {
+    const meta = elementDB[sym]; const d = meta.forms[0]; const ppm = fedNo2AvgPpm[sym] || 0;
+    const row = document.createElement("tr"); row.dataset.symbol = sym;
+    row.innerHTML = `
+      <td>${meta.name}</td><td>${sym}</td>
+      <td><select class="mf-form">${meta.forms.map(f=>`<option value="${f.id}">${f.label}</option>`).join("")}</select></td>
+      <td><input type="number" class="mf-ppm" value="${ppm}" step="0.01"></td>
+      <td><input type="number" class="mf-rec" value="95" step="0.1"></td>
+      <td><input type="number" class="mf-factor" value="${d.factor}" step="0.01"></td>
+      <td><select class="mf-price-unit"><option value="mt" ${d.priceUnit==='mt'?'selected':''}>USD/t</option><option value="kg" ${d.priceUnit==='kg'?'selected':''}>USD/kg</option><option value="oz" ${d.priceUnit==='oz'?'selected':''}>USD/oz</option></select></td>
+      <td><input type="number" class="mf-price" value="${d.price}"></td>
+      <td class="text-center mf-metal-ty">0</td><td class="text-center mf-prod-ty">0</td><td class="text-center mf-revenue">0</td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function buildCapexTable() {
+  const tbody = document.getElementById("capexBody"); tbody.innerHTML = "";
+  capexBlocks.forEach(b=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${b.label}</td><td><input type="number" class="cap-base" value="${b.base}"></td><td><input type="number" class="cap-exp" value="${b.exp}" step="0.05"></td><td class="text-right cap-auto">0</td><td><input type="number" class="cap-override" value="0"></td><td class="text-right cap-final">0</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function buildVarOpexTable(){
+  const tbody=document.getElementById("varOpexBody"); tbody.innerHTML="";
+  varOpexRows.forEach(r=>{const tr=document.createElement("tr"); tr.innerHTML=`<td>${r.label}</td><td><input type="number" class="vx-perT" value="0" step="0.1"></td><td class="text-right vx-annual">0</td>`; tbody.appendChild(tr);});
+}
+
+function getFeedParams() {
+  const feedMtpd = parseFloat(document.getElementById("feedMtpd").value) || 0;
+  const hours = parseFloat(document.getElementById("hoursPerDay").value) || 0;
+  const days = parseFloat(document.getElementById("daysPerYear").value) || 0;
+  return {
+    feedMtpd, hours, days,
+    mtph: hours>0 ? feedMtpd/hours : 0,
+    mtpy: feedMtpd*days,
+    globalRec: parseFloat(document.getElementById("globalRecoveryPct").value) || 0,
+    reservesMt: parseFloat(document.getElementById("reservesMt").value) || 0,
+    useFixedCarbon: document.getElementById("useFixedCarbon").value === "yes",
+    fixedC: parseFloat(document.getElementById("fixedCarbonPct").value) || 0,
+    goConv: parseFloat(document.getElementById("goConversionPct").value) || 0,
+    goShare: parseFloat(document.getElementById("goSharePct").value) || 0
+  };
+}
+
+function recalcStep1(){
+  const p=getFeedParams();
+  document.getElementById("outFeedMtph").textContent=fmt(p.mtph,2);
+  document.getElementById("outFeedMtpy").textContent=fmt(p.mtpy,0);
+  document.getElementById("sum1Feed").textContent=fmt(p.mtpy,0)+" mt/yr";
+  const goT = p.useFixedCarbon ? p.mtpy*(p.fixedC/100)*(p.goConv/100)*(p.goShare/100) : 0;
+  document.getElementById("sum1GO").textContent=fmt(goT,2)+" t/yr";
+  return p;
+}
+
+function recalcMassFlow(p){
+  let totalRev=0; cachedMassResults=[];
+  document.querySelectorAll("#massFlowBody tr").forEach(tr=>{
+    const sym=tr.dataset.symbol; const meta=elementDB[sym];
+    const ppm=parseFloat(tr.querySelector(".mf-ppm").value)||0;
+    const rec=parseFloat(tr.querySelector(".mf-rec").value)||p.globalRec;
+    const factor=parseFloat(tr.querySelector(".mf-factor").value)||1;
+    const pu=tr.querySelector(".mf-price-unit").value;
+    const price=parseFloat(tr.querySelector(".mf-price").value)||0;
+
+    const metalT=p.mtpy*(ppm/1e6)*(rec/100);
+    const prodT=metalT*factor;
+    let rev=0;
+    if (pu==="mt") rev=prodT*price;
+    else if (pu==="kg") rev=prodT*1000*price;
+    else rev=prodT*1000*1000/31.1035*price;
+
+    tr.querySelector(".mf-metal-ty").textContent=fmt(metalT,4);
+    tr.querySelector(".mf-prod-ty").textContent=fmt(prodT,4);
+    tr.querySelector(".mf-revenue").textContent=fmt(rev,0);
+    totalRev += rev;
+
+    const resProdT = p.reservesMt*(ppm/1e6)*(rec/100)*factor;
+    const resVal = pu==="mt" ? resProdT*price : pu==="kg" ? resProdT*1000*price : resProdT*1000*1000/31.1035*price;
+    cachedMassResults.push({element:meta.name,form:tr.querySelector('.mf-form').value,prodT,revenue:rev,resProdT,resVal});
+  });
+  document.getElementById("mfTotalRevenue").textContent=fmt(totalRev,0);
+  return totalRev;
+}
+
+function recalcCoalSales(p){
+  if (!p.useFixedCarbon) {
+    ["coalDomesticT","coalDomesticRev","coalExportT","coalExportRev","coalTotalRev","goProdT","goRev","coalGoTotalRev"].forEach(id=>document.getElementById(id).textContent="0");
+    cachedCoalGoRev=0; return;
+  }
+  const fixedT = p.mtpy*(p.fixedC/100);
+  const coalShare = Math.max(0,1-p.goShare/100);
+  const washRec = (parseFloat(document.getElementById("coalWashRecPct").value)||0)/100;
+  const recoverableCoal = fixedT*coalShare*washRec;
+  const domesticShare = Math.min(1,Math.max(0,(parseFloat(document.getElementById("coalDomesticSharePct").value)||0)/100));
+  const exportShare = 1-domesticShare;
+  document.getElementById("coalExportSharePct").textContent = fmt(exportShare*100,1);
+
+  const domesticT = recoverableCoal*domesticShare;
+  const exportT = recoverableCoal*exportShare;
+  const domesticRev = domesticT*(parseFloat(document.getElementById("coalDomesticPrice").value)||0);
+  const exportRev = exportT*(parseFloat(document.getElementById("coalExportPrice").value)||0);
+
+  document.getElementById("coalDomesticT").textContent = fmt(domesticT,2)+" t/yr";
+  document.getElementById("coalExportT").textContent = fmt(exportT,2)+" t/yr";
+  document.getElementById("coalDomesticRev").textContent = fmt(domesticRev,0);
+  document.getElementById("coalExportRev").textContent = fmt(exportRev,0);
+  document.getElementById("coalTotalRev").textContent = fmt(domesticRev+exportRev,0);
+
+  const grade=document.getElementById("goGrade").value;
+  const defaultPrice = grade==="low"?150:grade==="mid"?400:700;
+  const price = (parseFloat(document.getElementById("goPricePerKg").value)||defaultPrice);
+  const goT = fixedT*(p.goConv/100)*(p.goShare/100);
+  const goRev = goT*1000*price;
+  document.getElementById("goProdT").textContent = fmt(goT,2);
+  document.getElementById("goRev").textContent = fmt(goRev,0);
+
+  const total = domesticRev+exportRev+goRev;
+  document.getElementById("coalGoTotalRev").textContent = fmt(total,0);
+  const integrate = document.getElementById("integrateCoalSales").value === "yes";
+  cachedCoalGoRev = integrate ? total : 0;
+}
+
+function recalcValuation(){
+  const tbody=document.getElementById("valuationBody"); tbody.innerHTML="";
+  let annual=0,resT=0,resV=0;
+  cachedMassResults.forEach(r=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${r.element}</td><td>${r.form}</td><td class="text-center">${fmt(r.prodT,4)}</td><td class="text-center">${fmt(r.revenue,0)}</td><td class="text-center">${fmt(r.resProdT,4)}</td><td class="text-center">${fmt(r.resVal,0)}</td>`;
+    tbody.appendChild(tr);
+    annual+=r.revenue;resT+=r.resProdT;resV+=r.resVal;
+  });
+  document.getElementById("valTotalAnnualRev").textContent=fmt(annual,0);
+  document.getElementById("valTotalResT").textContent=fmt(resT,4);
+  document.getElementById("valTotalResValue").textContent=fmt(resV,0);
+}
+
+function recalcSchedule(){
+  const rampMonths=parseInt(document.getElementById("rampMonths").value)||6;
+  const startPct=(parseFloat(document.getElementById("rampStartPct").value)||0)/100;
+  const tbody=document.getElementById("scheduleBody"); tbody.innerHTML="";
+  cachedMassResults.forEach(r=>{
+    if (r.prodT<=0) return;
+    const monthly=r.prodT/12; let sched=0;
+    for(let m=1;m<=12;m++){
+      let f;
+      if (m===1) f=startPct;
+      else if (m<=rampMonths){ const frac=(m-1)/Math.max(1,rampMonths-1); f=startPct+(1-startPct)*frac; }
+      else f=1;
+      sched += monthly*f;
+    }
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${r.element}</td><td>${r.form}</td><td class="text-center">${fmt(sched,4)}</td><td class="text-center">${fmt(r.prodT,4)}</td><td class="text-center">${fmt(100*sched/(r.prodT||1),1)}%</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function recalcCapex(p){
+  const expDefault=parseFloat(document.getElementById("capexScaleExp").value)||0.6;
+  let direct=0;
+  document.querySelectorAll("#capexBody tr").forEach(tr=>{
+    const base=parseFloat(tr.querySelector('.cap-base').value)||0;
+    const exp=parseFloat(tr.querySelector('.cap-exp').value)||expDefault;
+    const ov=parseFloat(tr.querySelector('.cap-override').value)||0;
+    const auto=base*Math.pow((p.feedMtpd||1)/1000,exp);
+    const fin=ov>0?ov:auto;
+    tr.querySelector('.cap-auto').textContent=fmt(auto,0);
+    tr.querySelector('.cap-final').textContent=fmt(fin,0);
+    direct+=fin;
+  });
+  const siteCap = (document.getElementById("siteLandMode").value==="purchase"?(parseFloat(document.getElementById("siteLandPurchase").value)||0):0) + (parseFloat(document.getElementById("siteUtilities").value)||0) + (parseFloat(document.getElementById("siteCivil").value)||0);
+  const bldg=(parseFloat(document.getElementById("bldgSqft").value)||0)*(parseFloat(document.getElementById("bldgCostPerSqft").value)||0);
+  document.getElementById("bldgCapex").textContent=fmt(bldg,0);
+  direct += siteCap + bldg;
+
+  const ind=direct*(parseFloat(document.getElementById("capexIndirectPct").value)||0)/100;
+  const own=direct*(parseFloat(document.getElementById("capexOwnerPct").value)||0)/100;
+  const total=direct+ind+own;
+  const itc=total*(parseFloat(document.getElementById("capexItcPct").value)||0)/100;
+  const net=total-itc;
+
+  document.getElementById("capexTotal").textContent=fmt(total,0);
+  document.getElementById("capexNet").textContent=fmt(net,0);
+  return {total, net};
+}
+
+function recalcStartup(){
+  const t=(parseFloat(startupEng.value)||0)+(parseFloat(startupComm.value)||0)+(parseFloat(startupSpares.value)||0)+(parseFloat(startupTraining.value)||0);
+  startupTotal.textContent=fmt(t,0);
+  dd1Amt.textContent=fmt(t*(parseFloat(dd1.value)||0)/100,0);
+  dd2Amt.textContent=fmt(t*(parseFloat(dd2.value)||0)/100,0);
+  dd3Amt.textContent=fmt(t*(parseFloat(dd3.value)||0)/100,0);
+  dd4Amt.textContent=fmt(t*(parseFloat(dd4.value)||0)/100,0);
+  cachedStartupTotal=t;
+}
+
+function recalcOpex(p){
+  const baselineMtpd = parseFloat(document.getElementById("opexBaselineMtpd").value)||p.feedMtpd||1;
+  const baselineMtpy = baselineMtpd*(parseFloat(document.getElementById("daysPerYear").value)||330);
+  const scale = baselineMtpy>0 ? p.mtpy/baselineMtpy : 1;
+
+  const op=(parseFloat(fxOperLabor.value)||0)*scale;
+  const mt=(parseFloat(fxMaintLabor.value)||0)*scale;
+  const su=(parseFloat(fxSupport.value)||0)*scale;
+  const tx=(parseFloat(fxTaxIns.value)||0)*scale;
+
+  fxOperScaled.textContent=fmt(op,0); fxMaintScaled.textContent=fmt(mt,0); fxSupportScaled.textContent=fmt(su,0); fxTaxInsScaled.textContent=fmt(tx,0);
+
+  let varAnnual=0;
+  document.querySelectorAll("#varOpexBody tr").forEach(tr=>{
+    const perT=parseFloat(tr.querySelector('.vx-perT').value)||0;
+    const annual=perT*p.mtpy;
+    tr.querySelector('.vx-annual').textContent=fmt(annual,0);
+    varAnnual += annual;
+  });
+  const leaseAnnual = document.getElementById("siteLandMode").value==="lease" ? (parseFloat(document.getElementById("siteLeaseAnnual").value)||0) : 0;
+  const total = op+mt+su+tx+varAnnual+leaseAnnual;
+  opxAnnualTotal.textContent=fmt(total,0);
+  return total;
+}
+
+function recalcIncome(totalRevenue, opexAnnual, capex){
+  const taxRate=(parseFloat(finTaxRate.value)||0)/100;
+  const cogs=totalRevenue*((parseFloat(finCogsPct.value)||0)/100);
+  const royalty=totalRevenue*((parseFloat(finRoyaltyRevPct.value)||0)/100);
+  const dep=capex.total/Math.max(1,parseFloat(finDepYears.value)||10);
+  const ebit=(totalRevenue-cogs)-opexAnnual-royalty-dep;
+  const tax=ebit>0?ebit*taxRate:0;
+  const net=ebit-tax;
+  isRevenue.textContent=fmt(totalRevenue,0);
+  isNet.textContent=fmt(net,0);
+  ratioProfit.textContent=fmt(totalRevenue?100*net/totalRevenue:0,1)+" %";
+  return {net,dep};
+}
+
+function recalcBalanceSheet(capex, income){
+  const debt=parseFloat(invDebt.value)||0;
+  const ppe = capex.net + cachedStartupTotal;
+  const retained = Math.max(0,income.net);
+  const assets = ppe + (parseFloat(bsCash.value)||0) + (parseFloat(bsInventory.value)||0) + (parseFloat(bsAR.value)||0);
+  const le = debt + (parseFloat(bsCurrentLiab.value)||0) + (parseFloat(invEquity.value)||0) + retained;
+  bsPPE.textContent=fmt(ppe,0); bsDebt.textContent=fmt(debt,0); bsEquityPaid.textContent=fmt(parseFloat(invEquity.value)||0,0); bsRetained.textContent=fmt(retained,0); bsAssets.textContent=fmt(assets,0); bsLE.textContent=fmt(le,0);
+}
+
+function recalcCashFlow(capex, income){
+  const years=parseInt(cfYears.value)||10;
+  const disc=(parseFloat(cfDiscRate.value)||0)/100;
+  const tbody=cfBody; tbody.innerHTML="";
+  cachedCashFlows=[];
+  let npv=0;
+  for(let y=0;y<=years;y++){
+    const cf = y===0 ? -(capex.net+cachedStartupTotal) : income.net+income.dep;
+    const dcf = cf/Math.pow(1+disc,y);
+    cachedCashFlows.push(cf);
+    npv += dcf;
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${y}</td><td class="text-right">${fmt(cf,0)}</td><td class="text-right">${fmt(dcf,0)}</td>`;
+    tbody.appendChild(tr);
+  }
+  cfNpv.textContent=fmt(npv,0);
+  function irr(cfs){let lo=-0.9,hi=2;const f=r=>cfs.reduce((a,c,i)=>a+c/Math.pow(1+r,i),0);for(let i=0;i<60;i++){const m=(lo+hi)/2; if(f(m)>0) lo=m; else hi=m;} return (lo+hi)/2;}
+  cfIrr.textContent="IRR "+fmt(irr(cachedCashFlows)*100,2)+" %";
+}
+
+function recalcInvestor(){
+  const eq=parseFloat(invEquity.value)||0;
+  const debt=parseFloat(invDebt.value)||0;
+  const debtRate=(parseFloat(invDebtRate.value)||0)/100;
+  const share=(parseFloat(invSharePct.value)||0)/100;
+  let dist=0;
+  cachedCashFlows.forEach((cf,i)=>{ if(i===0) return; dist += (cf - debt*debtRate)*share; });
+  invDistEquity.textContent=fmt(dist,0);
+  invEquityMoic.textContent=fmt(eq?dist/eq:0,2);
+}
+
+function downloadFile(filename, mime, content) {
+  const blob = new Blob([content], {type:mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
+}
+
+function exportHtmlSnapshot(){ downloadFile("energ4_tea_snapshot.html","text/html","<!DOCTYPE html>\n"+document.documentElement.outerHTML); }
+function exportMarkdownSummary(){
+  const md = `# ENERG4 TEA Snapshot\n\n- Project: ${projName.value}\n- Feed: ${outFeedMtpy.textContent} mt/yr\n- Metals Revenue: ${mfTotalRevenue.textContent}\n- Coal+GO Revenue: ${coalGoTotalRev.textContent}\n- Total Revenue: ${isRevenue.textContent}\n- Net Income: ${isNet.textContent}`;
+  downloadFile("energ4_tea_summary.md","text/markdown",md);
+}
+function exportScenarioJson(){
+  const data = {inputs:{}};
+  document.querySelectorAll("input,select").forEach(el=>data.inputs[el.id]=el.value);
+  scenarioJson.value = JSON.stringify(data,null,2);
+  downloadFile("energ4_tea_scenario.json","application/json",scenarioJson.value);
+}
+function exportExcelWorkbook(){
+  const metalsRev = Number((mfTotalRevenue.textContent||"0").replace(/,/g,""));
+  const coalGoRev = Number((coalGoTotalRev.textContent||"0").replace(/,/g,""));
+  const opex = Number((opxAnnualTotal.textContent||"0").replace(/,/g,""));
+  const xml = `<?xml version="1.0"?>\n<?mso-application progid="Excel.Sheet"?>\n<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n<Worksheet ss:Name="Summary"><Table>\n<Row><Cell><Data ss:Type="String">Project</Data></Cell><Cell><Data ss:Type="String">${projName.value}</Data></Cell></Row>\n<Row><Cell><Data ss:Type="String">Metals Revenue</Data></Cell><Cell><Data ss:Type="Number">${metalsRev}</Data></Cell></Row>\n<Row><Cell><Data ss:Type="String">Coal+GO Revenue</Data></Cell><Cell><Data ss:Type="Number">${coalGoRev}</Data></Cell></Row>\n<Row><Cell><Data ss:Type="String">Total Revenue</Data></Cell><Cell ss:Formula="=R2C2+R3C2"><Data ss:Type="Number">0</Data></Cell></Row>\n<Row><Cell><Data ss:Type="String">OPEX</Data></Cell><Cell><Data ss:Type="Number">${opex}</Data></Cell></Row>\n</Table></Worksheet>\n<Worksheet ss:Name="CashFlow"><Table>${cachedCashFlows.map((c,i)=>`<Row><Cell><Data ss:Type="Number">${i}</Data></Cell><Cell><Data ss:Type="Number">${c}</Data></Cell></Row>`).join("")} </Table></Worksheet>\n</Workbook>`;
+  downloadFile("energ4_workbook.xls", "application/vnd.ms-excel", xml);
+}
+
+function recalcAll(){
+  const p = recalcStep1();
+  const metalsRev = recalcMassFlow(p);
+  recalcCoalSales(p);
+  recalcValuation();
+  recalcSchedule();
+  const cap = recalcCapex(p);
+  recalcStartup();
+  const opex = recalcOpex(p);
+  const totalRev = metalsRev + cachedCoalGoRev;
+  const inc = recalcIncome(totalRev, opex, cap);
+  recalcBalanceSheet(cap, inc);
+  recalcCashFlow(cap, inc);
+  recalcInvestor();
+}
+
+function setupNav(){
+  const links=document.querySelectorAll('.step-link'); const steps=document.querySelectorAll('.step');
+  links.forEach(link=>link.addEventListener('click',()=>{links.forEach(l=>l.classList.remove('active'));steps.forEach(s=>s.classList.remove('active'));link.classList.add('active');document.getElementById(link.dataset.step).classList.add('active');}));
+}
+
+document.addEventListener("DOMContentLoaded",()=>{
+  setupNav();
+  buildMassFlowTable();
+  buildCapexTable();
+  buildVarOpexTable();
+  document.querySelectorAll("input, select").forEach(el=>el.addEventListener("input",recalcAll));
+  btnExportHtml.addEventListener("click",exportHtmlSnapshot);
+  btnExportMd.addEventListener("click",exportMarkdownSummary);
+  btnExportJson.addEventListener("click",exportScenarioJson);
+  btnExportExcel.addEventListener("click",exportExcelWorkbook);
+  btnPrint.addEventListener("click",()=>window.print());
+  recalcAll();
+});
+</script>
+</body>
+</html>
