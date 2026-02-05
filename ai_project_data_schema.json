@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "energ4-ai-inputs-v1",
+  "title": "ENERG4 AI Input Payload",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "inputs"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "energ4-ai-inputs-v1"
+    },
+    "description": {
+      "type": "string"
+    },
+    "instructions_for_ai": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "project_data_context": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "inputs": {
+      "type": "object",
+      "description": "Keyed by HTML control id.",
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "boolean"
+          }
+        ]
+      }
+    }
+  },
+  "additionalProperties": true
+}
